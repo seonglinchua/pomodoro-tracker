@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test TempUser Utility</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #ff5252;
+        }
+        .result {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-family: monospace;
+        }
+        h1 {
+            color: #ff6b6b;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🍅 TempUser Utility Test</h1>
+        <p>Test the temporary user ID generation and localStorage functionality.</p>
+
+        <div>
+            <button onclick="testGetTempUserId()">Get Temp User ID</button>
+            <button onclick="testGetCurrentTempUserId()">Get Current (No Create)</button>
+            <button onclick="testClearTempUserId()">Clear Temp User ID</button>
+            <button onclick="viewLocalStorage()">View localStorage</button>
+        </div>
+
+        <div id="result" class="result">
+            Click a button to test the functionality...
+        </div>
+    </div>
+
+    <script type="module">
+        // Import the tempUser utility
+        import { getTempUserId, clearTempUserId, getCurrentTempUserId } from './src/utils/tempUser.js';
+
+        // Make functions available globally for onclick
+        window.testGetTempUserId = () => {
+            const userId = getTempUserId();
+            document.getElementById('result').innerHTML = `
+                <strong>getTempUserId() result:</strong><br>
+                User ID: ${userId}<br>
+                <small>This will create a new ID if one doesn't exist, or return the existing one.</small>
+            `;
+        };
+
+        window.testGetCurrentTempUserId = () => {
+            const userId = getCurrentTempUserId();
+            document.getElementById('result').innerHTML = `
+                <strong>getCurrentTempUserId() result:</strong><br>
+                User ID: ${userId || 'null (no user ID exists yet)'}<br>
+                <small>This only reads the existing ID without creating a new one.</small>
+            `;
+        };
+
+        window.testClearTempUserId = () => {
+            clearTempUserId();
+            document.getElementById('result').innerHTML = `
+                <strong>clearTempUserId() result:</strong><br>
+                Temporary user ID has been cleared from localStorage.<br>
+                <small>Click "Get Temp User ID" to create a new one.</small>
+            `;
+        };
+
+        window.viewLocalStorage = () => {
+            const tempUserId = localStorage.getItem('tempUserId');
+            const allKeys = Object.keys(localStorage);
+            document.getElementById('result').innerHTML = `
+                <strong>localStorage contents:</strong><br>
+                tempUserId: ${tempUserId || 'not set'}<br>
+                <br>
+                <strong>All localStorage keys:</strong><br>
+                ${allKeys.length > 0 ? allKeys.join(', ') : 'empty'}
+            `;
+        };
+
+        // Auto-test on load
+        console.log('TempUser utility loaded successfully!');
+        console.log('Testing getTempUserId():', getTempUserId());
+    </script>
+</body>
+</html>
