@@ -33,14 +33,19 @@ if (isFirebaseConfigured) {
     analytics = getAnalytics(app);
     db = getFirestore(app);
     firebaseEnabled = true;
-    console.log('Firebase initialized successfully');
+    if (import.meta.env.DEV) {
+      console.log('Firebase initialized successfully');
+    }
   } catch (error) {
     console.error('Error initializing Firebase:', error);
     console.warn('Firebase features will be disabled. The app will work with localStorage only.');
   }
 } else {
-  console.warn('Firebase configuration not found. Running in localStorage-only mode.');
-  console.info('To enable Firebase, create a .env file with your Firebase credentials.');
+  // Only show Firebase warnings in development mode
+  if (import.meta.env.DEV) {
+    console.warn('Firebase configuration not found. Running in localStorage-only mode.');
+    console.info('To enable Firebase, create a .env file with your Firebase credentials.');
+  }
 }
 
 export { app, analytics, db, firebaseEnabled };

@@ -8,7 +8,7 @@ import Settings from './pages/Settings'
 function App() {
   return (
     <ThemeProvider>
-      <BrowserRouter>
+      <BrowserRouter basename="/pomodoro-tracker">
         <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<Home />} />
