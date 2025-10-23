@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { db } from '../firebase'
+import { db, firebaseEnabled } from '../firebase'
 import { collection, addDoc } from 'firebase/firestore'
 import { getTempUserId } from '../utils/tempUser'
 
@@ -23,6 +23,18 @@ export default function Timer() {
 
   // Save completed session to Firestore
   const saveSession = async (type, startTime, endTime, duration) => {
+    // Skip if Firebase is not configured
+    if (!firebaseEnabled || !db) {
+      console.log('Firebase not available. Session data:', {
+        type: type.toLowerCase(),
+        startTime,
+        endTime,
+        duration,
+        date: new Date().toISOString().split('T')[0]
+      })
+      return
+    }
+
     try {
       const userId = getTempUserId()
       const sessionData = {

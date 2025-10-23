@@ -18,6 +18,8 @@ A modern, feature-rich productivity app built with React, Vite, and Firebase tha
 - 🔄 **Real-time Sync** - All data synced to Firebase Firestore
 - 🚀 **Auto-Deploy** - GitHub Actions automatically deploys to GitHub Pages
 - ⚙️ **Settings Page** - Customize appearance and manage user data
+- 🛡️ **Error Boundary** - Graceful error handling with helpful troubleshooting tips
+- 💾 **localStorage-only Mode** - App works without Firebase configuration (timer-only mode)
 
 ### Coming Soon
 - 🔐 User Authentication (currently using temporary user IDs)
@@ -99,6 +101,37 @@ The app will open at `http://localhost:5173`
 npm run build
 ```
 
+## 💾 Running Without Firebase (localStorage-only Mode)
+
+**NEW**: The app now supports running without Firebase configuration! This is perfect for:
+- Quick testing and development
+- Running the timer without data persistence
+- Environments where Firebase is not available
+
+### How it works:
+
+1. **Without `.env.local` file**: The app will automatically detect missing Firebase configuration and run in localStorage-only mode
+2. **Timer functionality**: All timer features work normally
+3. **No data persistence**: Session data won't be saved to Firestore (only logged to console)
+4. **Statistics page**: Will show empty state with helpful message
+
+### To use localStorage-only mode:
+
+Simply skip step 3 and 4 (Firebase setup) in the Quick Start guide and run:
+
+```bash
+npm install
+npm run dev
+```
+
+You'll see a console message:
+```
+Firebase configuration not found. Running in localStorage-only mode.
+To enable Firebase, create a .env file with your Firebase credentials.
+```
+
+The app will work perfectly for timing your pomodoro sessions, just without the statistics persistence.
+
 ## 📁 Project Structure
 
 ```
@@ -112,7 +145,8 @@ pomodoro-tracker/
 │   ├── components/
 │   │   ├── Timer.jsx           # Main Pomodoro timer component
 │   │   ├── Navigation.jsx      # Top navigation bar
-│   │   └── Layout.jsx          # App layout wrapper
+│   │   ├── Layout.jsx          # App layout wrapper
+│   │   └── ErrorBoundary.jsx   # Error boundary for graceful error handling
 │   ├── pages/
 │   │   ├── Home.jsx            # Timer page
 │   │   ├── Statistics.jsx      # Charts and session history
@@ -274,13 +308,27 @@ Firebase credentials in `.env.local` are never committed to Git. For deployment,
 
 ## 🐛 Troubleshooting
 
+### Blank Page / App Not Loading
+
+**FIXED**: This issue has been resolved! The app now includes:
+- ✅ **Error Boundary**: Catches and displays errors with helpful troubleshooting tips
+- ✅ **Graceful Firebase Handling**: App works without Firebase configuration
+- ✅ **localStorage-only Mode**: Timer works even without database connection
+
+If you still see a blank page:
+1. Check browser console for errors (F12)
+2. Clear browser cache and localStorage
+3. Ensure dependencies are installed: `npm install`
+4. Try building: `npm run build && npm run preview`
+
 ### Build Fails Locally
-- Ensure all environment variables are set in `.env.local`
+- Ensure Node.js version is v20+
 - Run `npm install` to ensure dependencies are up to date
-- Check Node.js version (should be v20+)
+- Check for syntax errors in console output
 
 ### Firebase Connection Issues
-- Verify `.env.local` has correct Firebase credentials
+- **Without Firebase**: App works fine in localStorage-only mode
+- **With Firebase**: Verify `.env.local` has correct credentials
 - Check Firebase Console for project status
 - Ensure Firestore is enabled and in test mode
 
@@ -290,9 +338,18 @@ Firebase credentials in `.env.local` are never committed to Git. For deployment,
 - Ensure `vite.config.js` has correct `base` path
 
 ### Statistics Not Loading
-- Open browser console to check for errors
-- Verify Firebase Firestore rules allow reads
-- Ensure you have completed at least one session
+- **Without Firebase**: Statistics will show "No sessions yet" message
+- **With Firebase**:
+  - Open browser console to check for errors
+  - Verify Firebase Firestore rules allow reads
+  - Ensure you have completed at least one session
+
+### Error Boundary Displayed
+If you see the error boundary page:
+1. Read the error message and stack trace
+2. Check if `.env.local` file exists and is configured correctly
+3. Try "Clear Data & Reload" button
+4. Check browser console for additional details
 
 ## 🤝 Contributing
 

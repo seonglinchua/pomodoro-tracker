@@ -16,9 +16,31 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-const db = getFirestore(app);
+// Check if Firebase config is available
+const isFirebaseConfigured = firebaseConfig.apiKey &&
+  firebaseConfig.authDomain &&
+  firebaseConfig.projectId;
 
-export { app, analytics, db };
+let app = null;
+let analytics = null;
+let db = null;
+let firebaseEnabled = false;
+
+// Initialize Firebase only if configuration is available
+if (isFirebaseConfigured) {
+  try {
+    app = initializeApp(firebaseConfig);
+    analytics = getAnalytics(app);
+    db = getFirestore(app);
+    firebaseEnabled = true;
+    console.log('Firebase initialized successfully');
+  } catch (error) {
+    console.error('Error initializing Firebase:', error);
+    console.warn('Firebase features will be disabled. The app will work with localStorage only.');
+  }
+} else {
+  console.warn('Firebase configuration not found. Running in localStorage-only mode.');
+  console.info('To enable Firebase, create a .env file with your Firebase credentials.');
+}
+
+export { app, analytics, db, firebaseEnabled };

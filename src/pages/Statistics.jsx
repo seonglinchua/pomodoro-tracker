@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { db } from '../firebase'
+import { db, firebaseEnabled } from '../firebase'
 import { collection, query, orderBy, getDocs, limit } from 'firebase/firestore'
 import { getTempUserId } from '../utils/tempUser'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
@@ -25,6 +25,14 @@ export default function Statistics() {
   }, [])
 
   const fetchSessions = async () => {
+    // If Firebase is not configured, just show empty state
+    if (!firebaseEnabled || !db) {
+      console.log('Firebase not available. Statistics will show empty.')
+      setSessions([])
+      setLoading(false)
+      return
+    }
+
     try {
       const userId = getTempUserId()
       const sessionsRef = collection(db, 'users', userId, 'sessions')
