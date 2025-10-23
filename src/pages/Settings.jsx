@@ -34,6 +34,9 @@ export default function Settings() {
             </div>
             <button
               onClick={toggleDarkMode}
+              role="switch"
+              aria-checked={darkMode}
+              aria-label="Toggle dark mode"
               className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
                 darkMode ? 'bg-gradient-to-r from-purple-500 to-pink-500' : 'bg-gray-300'
               }`}

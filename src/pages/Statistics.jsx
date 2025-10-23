@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { db, firebaseEnabled } from '../firebase'
 import { collection, query, orderBy, getDocs, limit } from 'firebase/firestore'
 import { getTempUserId } from '../utils/tempUser'
+import { useTheme } from '../contexts/ThemeContext'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 
 const COLORS = {
@@ -11,6 +12,7 @@ const COLORS = {
 }
 
 export default function Statistics() {
+  const { darkMode } = useTheme()
   const [sessions, setSessions] = useState([])
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState({
@@ -137,12 +139,17 @@ export default function Statistics() {
           <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">Sessions by Date</h2>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={getSessionsByDate()}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis dataKey="date" stroke="#9ca3af" />
-              <YAxis stroke="#9ca3af" />
+              <CartesianGrid strokeDasharray="3 3" stroke={darkMode ? '#374151' : '#e5e7eb'} />
+              <XAxis dataKey="date" stroke={darkMode ? '#9ca3af' : '#6b7280'} />
+              <YAxis stroke={darkMode ? '#9ca3af' : '#6b7280'} />
               <Tooltip
-                contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px' }}
-                labelStyle={{ color: '#f3f4f6' }}
+                contentStyle={{
+                  backgroundColor: darkMode ? '#1f2937' : '#ffffff',
+                  border: darkMode ? 'none' : '1px solid #e5e7eb',
+                  borderRadius: '8px',
+                  color: darkMode ? '#f3f4f6' : '#1f2937'
+                }}
+                labelStyle={{ color: darkMode ? '#f3f4f6' : '#1f2937' }}
               />
               <Legend />
               <Bar dataKey="work" fill="#f43f5e" name="Work" />
@@ -171,7 +178,12 @@ export default function Statistics() {
                 ))}
               </Pie>
               <Tooltip
-                contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px' }}
+                contentStyle={{
+                  backgroundColor: darkMode ? '#1f2937' : '#ffffff',
+                  border: darkMode ? 'none' : '1px solid #e5e7eb',
+                  borderRadius: '8px',
+                  color: darkMode ? '#f3f4f6' : '#1f2937'
+                }}
               />
             </PieChart>
           </ResponsiveContainer>
