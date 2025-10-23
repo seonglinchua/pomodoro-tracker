@@ -1,4 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
+import { db } from './firebase'
+import { collection, addDoc } from 'firebase/firestore'
+import { getTempUserId } from './utils/tempUser'
 
 const SESSION_TYPES = {
   WORK: { duration: 25 * 60, label: 'Work', color: 'from-rose-500 to-orange-500' },
@@ -11,11 +14,32 @@ function App() {
   const [timeLeft, setTimeLeft] = useState(SESSION_TYPES.WORK.duration)
   const [isRunning, setIsRunning] = useState(false)
   const [completedSessions, setCompletedSessions] = useState(0)
+  const [sessionStartTime, setSessionStartTime] = useState(null)
   const intervalRef = useRef(null)
 
   const currentSession = SESSION_TYPES[sessionType]
   const totalTime = currentSession.duration
   const progress = ((totalTime - timeLeft) / totalTime) * 100
+
+  // Save completed session to Firestore
+  const saveSession = async (type, startTime, endTime, duration) => {
+    try {
+      const userId = getTempUserId()
+      const sessionData = {
+        type: type.toLowerCase(),
+        startTime: startTime,
+        endTime: endTime,
+        duration: duration,
+        date: new Date().toISOString().split('T')[0], // YYYY-MM-DD format
+        completed: true
+      }
+
+      await addDoc(collection(db, 'users', userId, 'sessions'), sessionData)
+      console.log('Session saved to Firestore:', sessionData)
+    } catch (error) {
+      console.error('Error saving session to Firestore:', error)
+    }
+  }
 
   useEffect(() => {
     if (isRunning && timeLeft > 0) {
@@ -23,9 +47,23 @@ function App() {
         setTimeLeft(prev => {
           if (prev <= 1) {
             setIsRunning(false)
+            const endTime = new Date().toISOString()
+
+            // Save session to Firestore
+            if (sessionStartTime) {
+              saveSession(
+                currentSession.label,
+                sessionStartTime,
+                endTime,
+                currentSession.duration
+              )
+            }
+
+            // Increment completed sessions counter for work sessions
             if (sessionType === 'WORK') {
               setCompletedSessions(count => count + 1)
             }
+
             return 0
           }
           return prev - 1
@@ -42,7 +80,7 @@ function App() {
         clearInterval(intervalRef.current)
       }
     }
-  }, [isRunning, timeLeft, sessionType])
+  }, [isRunning, timeLeft, sessionType, sessionStartTime, currentSession])
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60)
@@ -54,6 +92,10 @@ function App() {
     if (timeLeft === 0) {
       setTimeLeft(currentSession.duration)
     }
+    // Record start time when timer begins
+    if (!isRunning) {
+      setSessionStartTime(new Date().toISOString())
+    }
     setIsRunning(true)
   }
 
@@ -64,12 +106,14 @@ function App() {
   const handleReset = () => {
     setIsRunning(false)
     setTimeLeft(currentSession.duration)
+    setSessionStartTime(null)
   }
 
   const handleSessionChange = (type) => {
     setSessionType(type)
     setTimeLeft(SESSION_TYPES[type].duration)
     setIsRunning(false)
+    setSessionStartTime(null)
   }
 
   return (
