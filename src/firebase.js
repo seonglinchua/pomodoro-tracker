@@ -7,13 +7,13 @@ import { getFirestore } from "firebase/firestore";
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyCl5y56EUkoJ3D9Q1sVQ8JF-skh-zV845I",
-  authDomain: "pomodoro-tracker-e60d8.firebaseapp.com",
-  projectId: "pomodoro-tracker-e60d8",
-  storageBucket: "pomodoro-tracker-e60d8.firebasestorage.app",
-  messagingSenderId: "400914750063",
-  appId: "1:400914750063:web:40e301015100506c910b9a",
-  measurementId: "G-J4KEH5Q0QQ"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase
