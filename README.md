@@ -219,7 +219,11 @@ users/{tempUserId}/sessions/{sessionId}
 
 The app automatically deploys to GitHub Pages when you push to the `main` branch.
 
-### Setup GitHub Secrets (Required for Deployment)
+### Setup GitHub Secrets (Optional for Full Features)
+
+**Note**: GitHub secrets are **optional**. Without them, the deployed app will run in localStorage-only mode (timer-only, no statistics persistence).
+
+To enable full Firebase features on GitHub Pages:
 
 1. Go to your GitHub repository
 2. Navigate to **Settings → Secrets and variables → Actions**
@@ -231,6 +235,8 @@ The app automatically deploys to GitHub Pages when you push to the `main` branch
    - `VITE_FIREBASE_MESSAGING_SENDER_ID`
    - `VITE_FIREBASE_APP_ID`
    - `VITE_FIREBASE_MEASUREMENT_ID`
+
+If you skip this step, the app will still deploy successfully but will run without Firebase (localStorage-only mode).
 
 ### Deployment Workflow
 
