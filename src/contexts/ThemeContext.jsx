@@ -9,6 +9,7 @@ export function ThemeProvider({ children }) {
   })
 
   useEffect(() => {
+    console.log(`Dark mode ${darkMode ? 'enabled' : 'disabled'}`)
     localStorage.setItem('darkMode', JSON.stringify(darkMode))
     if (darkMode) {
       document.documentElement.classList.add('dark')
@@ -17,7 +18,10 @@ export function ThemeProvider({ children }) {
     }
   }, [darkMode])
 
-  const toggleDarkMode = () => setDarkMode(!darkMode)
+  const toggleDarkMode = () => {
+    console.log(`Toggling dark mode from ${darkMode ? 'on' : 'off'} to ${darkMode ? 'off' : 'on'}`)
+    setDarkMode(!darkMode)
+  }
 
   return (
     <ThemeContext.Provider value={{ darkMode, toggleDarkMode }}>
