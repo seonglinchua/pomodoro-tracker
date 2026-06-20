@@ -44,7 +44,7 @@ if (isFirebaseConfigured) {
   // Only show Firebase warnings in development mode
   if (import.meta.env.DEV) {
     console.warn('Firebase configuration not found. Running in localStorage-only mode.');
-    console.info('To enable Firebase, create a .env file with your Firebase credentials.');
+    console.info('To enable Firebase, create a .env.local file with your Firebase credentials.');
   }
 }
 

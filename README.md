@@ -15,7 +15,7 @@ A modern, feature-rich productivity app built with React, Vite, and Firebase tha
 - 🎨 **Modern UI** - Beautiful gradients, smooth animations, and responsive design
 - 🌙 **Dark Mode** - Toggle between light and dark themes
 - 📱 **Responsive Design** - Works seamlessly on desktop, tablet, and mobile
-- 🔄 **Real-time Sync** - All data synced to Firebase Firestore
+- 🔄 **Cloud Sync** - Completed sessions saved to Firebase Firestore (on completion, and loaded on the Statistics page)
 - 🚀 **Auto-Deploy** - GitHub Actions automatically deploys to GitHub Pages
 - ⚙️ **Settings Page** - Customize appearance and manage user data
 - 🛡️ **Error Boundary** - Graceful error handling with helpful troubleshooting tips
@@ -127,7 +127,7 @@ npm run dev
 You'll see a console message:
 ```
 Firebase configuration not found. Running in localStorage-only mode.
-To enable Firebase, create a .env file with your Firebase credentials.
+To enable Firebase, create a .env.local file with your Firebase credentials.
 ```
 
 The app will work perfectly for timing your pomodoro sessions, just without the statistics persistence.
@@ -152,19 +152,20 @@ pomodoro-tracker/
 │   │   ├── Statistics.jsx      # Charts and session history
 │   │   └── Settings.jsx        # App settings and theme toggle
 │   ├── contexts/
-│   │   └── ThemeContext.jsx    # Dark mode context
+│   │   ├── ThemeContext.jsx    # Dark mode context
+│   │   └── TimerContext.jsx    # Timer state and session saving
 │   ├── utils/
 │   │   └── tempUser.js         # Temporary user ID management
 │   ├── firebase.js             # Firebase configuration
 │   ├── App.jsx                 # Main app with routing
 │   ├── main.jsx                # React entry point
-│   └── index.css               # Global styles
+│   └── index.css               # Global styles (Tailwind v4 CSS config lives here)
 ├── .env.example                # Environment variables template
-├── .env.local                  # Your environment variables (gitignored)
+├── .env.local                  # Your environment variables (create locally, gitignored)
 ├── .gitignore
 ├── package.json
+├── postcss.config.js           # PostCSS / Tailwind plugin configuration
 ├── vite.config.js              # Vite configuration
-├── tailwind.config.js          # Tailwind CSS configuration
 └── README.md
 ```
 

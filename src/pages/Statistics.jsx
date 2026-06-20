@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { db, firebaseEnabled } from '../firebase'
 import { collection, query, orderBy, getDocs, limit } from 'firebase/firestore'
 import { getTempUserId } from '../utils/tempUser'
@@ -22,11 +22,7 @@ export default function Statistics() {
     breakSessions: 0
   })
 
-  useEffect(() => {
-    fetchSessions()
-  }, [])
-
-  const fetchSessions = async () => {
+  const fetchSessions = useCallback(async () => {
     // If Firebase is not configured, just show empty state
     if (!firebaseEnabled || !db) {
       console.log('Firebase not available. Statistics will show empty.')
@@ -47,22 +43,22 @@ export default function Statistics() {
       })
 
       setSessions(sessionData)
-      calculateStats(sessionData)
+      setStats({
+        totalSessions: sessionData.length,
+        totalMinutes: sessionData.reduce((sum, session) => sum + session.duration / 60, 0),
+        workSessions: sessionData.filter((s) => s.type === 'work').length,
+        breakSessions: sessionData.filter((s) => s.type !== 'work').length
+      })
       setLoading(false)
     } catch (error) {
       console.error('Error fetching sessions:', error)
       setLoading(false)
     }
-  }
+  }, [])
 
-  const calculateStats = (sessionData) => {
-    const totalSessions = sessionData.length
-    const totalMinutes = sessionData.reduce((sum, session) => sum + (session.duration / 60), 0)
-    const workSessions = sessionData.filter(s => s.type === 'work').length
-    const breakSessions = sessionData.filter(s => s.type !== 'work').length
-
-    setStats({ totalSessions, totalMinutes, workSessions, breakSessions })
-  }
+  useEffect(() => {
+    fetchSessions()
+  }, [fetchSessions])
 
   // Prepare data for charts
   const getSessionsByDate = () => {
