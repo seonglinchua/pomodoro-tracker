@@ -1,5 +1,14 @@
 import { useTimer } from '../contexts/TimerContext'
 
+const ACCENTS = {
+  WORK: { from: '#f43f5e', to: '#fb923c', glow: 'rgba(244,63,94,0.45)' },
+  SHORT_BREAK: { from: '#14b8a6', to: '#06b6d4', glow: 'rgba(20,184,166,0.45)' },
+  LONG_BREAK: { from: '#a855f7', to: '#ec4899', glow: 'rgba(168,85,247,0.45)' },
+}
+
+const RADIUS = 132
+const CIRCUMFERENCE = 2 * Math.PI * RADIUS
+
 export default function Timer() {
   const {
     sessionType,
@@ -11,11 +20,13 @@ export default function Timer() {
     handleStart,
     handlePause,
     handleReset,
-    handleSessionChange
+    handleSessionChange,
   } = useTimer()
 
+  const accent = ACCENTS[sessionType]
   const totalTime = currentSession.duration
   const progress = ((totalTime - timeLeft) / totalTime) * 100
+  const isComplete = timeLeft === 0
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60)
@@ -24,107 +35,116 @@ export default function Timer() {
   }
 
   return (
-    <div className="flex flex-col items-center space-y-8">
-      {/* Session Counter */}
-      <div className="text-center text-sm">
-        <span className="inline-flex items-center gap-2">
-          <span className="font-semibold dark:text-gray-300">Completed Sessions:</span>
-          <span className={`bg-gradient-to-r ${currentSession.color} text-white px-3 py-1 rounded-full font-bold`}>
-            {completedSessions}
-          </span>
-        </span>
-      </div>
-
-      {/* Session Type Selector */}
-      <div className="flex flex-wrap gap-2 justify-center w-full">
+    <div className="flex flex-col items-center gap-8">
+      {/* Session type segmented control */}
+      <div className="glass-subtle flex flex-wrap justify-center gap-1 rounded-full p-1">
         {Object.entries(SESSION_TYPES).map(([key, value]) => (
           <button
             key={key}
             onClick={() => handleSessionChange(key)}
             disabled={isRunning}
-            className={`font-medium py-2 px-4 md:px-6 rounded-full transition-all duration-300 ${
+            className={`rounded-full px-4 py-2 text-sm font-semibold transition-all duration-300 md:px-5 ${
               sessionType === key
-                ? 'bg-gradient-to-r ' + value.color + ' text-white shadow-lg scale-105'
-                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-            } ${isRunning ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'}`}
+                ? 'bg-gradient-to-r ' + value.color + ' text-white shadow-lg'
+                : 'text-gray-600 hover:bg-white/40 dark:text-gray-300 dark:hover:bg-white/10'
+            } ${isRunning ? 'cursor-not-allowed opacity-40' : ''}`}
           >
             {value.label}
           </button>
         ))}
       </div>
 
-      {/* Circular Progress with Timer */}
+      {/* Circular timer */}
       <div className="relative flex items-center justify-center">
-        <svg className="w-72 h-72 transform -rotate-90">
+        <div
+          className="absolute h-64 w-64 rounded-full blur-2xl transition-opacity duration-700"
+          style={{ background: accent.glow, opacity: isRunning ? 0.9 : 0.4 }}
+        />
+        <svg className="h-72 w-72 -rotate-90" viewBox="0 0 300 300">
           <circle
-            cx="144"
-            cy="144"
-            r="130"
+            cx="150"
+            cy="150"
+            r={RADIUS}
             stroke="currentColor"
-            strokeWidth="8"
+            strokeWidth="10"
             fill="none"
-            className="text-gray-200 dark:text-gray-700"
+            className="text-gray-200/70 dark:text-white/10"
           />
           <circle
-            cx="144"
-            cy="144"
-            r="130"
-            stroke="url(#gradient)"
-            strokeWidth="8"
+            cx="150"
+            cy="150"
+            r={RADIUS}
+            stroke="url(#timerGradient)"
+            strokeWidth="12"
             fill="none"
-            strokeDasharray={`${2 * Math.PI * 130}`}
-            strokeDashoffset={`${2 * Math.PI * 130 * (1 - progress / 100)}`}
-            className="transition-all duration-1000 ease-linear"
+            strokeDasharray={CIRCUMFERENCE}
+            strokeDashoffset={CIRCUMFERENCE * (1 - progress / 100)}
             strokeLinecap="round"
+            className="transition-all duration-1000 ease-linear"
+            style={{ filter: `drop-shadow(0 0 8px ${accent.glow})` }}
           />
           <defs>
-            <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor={sessionType === 'WORK' ? '#f43f5e' : sessionType === 'SHORT_BREAK' ? '#14b8a6' : '#a855f7'} />
-              <stop offset="100%" stopColor={sessionType === 'WORK' ? '#fb923c' : sessionType === 'SHORT_BREAK' ? '#06b6d4' : '#ec4899'} />
+            <linearGradient id="timerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor={accent.from} />
+              <stop offset="100%" stopColor={accent.to} />
             </linearGradient>
           </defs>
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <div className={`text-6xl md:text-7xl font-bold bg-gradient-to-r ${currentSession.color} bg-clip-text text-transparent transition-all duration-300 ${isRunning ? 'scale-110' : ''}`}>
+          <div
+            className={`font-display text-7xl font-bold tabular-nums tracking-tight transition-transform duration-500 ${
+              isRunning ? 'scale-105' : ''
+            }`}
+            style={{
+              background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
+              WebkitBackgroundClip: 'text',
+              backgroundClip: 'text',
+              color: 'transparent',
+            }}
+          >
             {formatTime(timeLeft)}
           </div>
-          <div className="text-sm text-gray-500 dark:text-gray-400 mt-2 font-medium">
-            {currentSession.label}
+          <div className="mt-2 flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400">
+            <span
+              className={`h-2 w-2 rounded-full ${isRunning ? 'animate-pulse-glow' : ''}`}
+              style={{ background: accent.from }}
+            />
+            {isRunning ? 'Focusing' : isComplete ? 'Session complete' : 'Ready'} · {currentSession.label}
           </div>
         </div>
       </div>
 
-      {/* Control Buttons */}
-      <div className="flex gap-3 md:gap-4">
+      {/* Controls */}
+      <div className="flex items-center gap-3">
         {!isRunning ? (
           <button
             onClick={handleStart}
-            className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold py-3 px-8 md:px-10 rounded-full transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
+            className="rounded-full bg-gradient-to-r from-rose-500 to-orange-500 px-10 py-3.5 font-semibold text-white shadow-lg shadow-rose-500/30 transition-all duration-200 hover:scale-105 hover:shadow-xl hover:shadow-rose-500/40 active:scale-95"
           >
-            {timeLeft === 0 ? 'Restart' : 'Start'}
+            {isComplete ? 'Restart' : 'Start focus'}
           </button>
         ) : (
           <button
             onClick={handlePause}
-            className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-semibold py-3 px-8 md:px-10 rounded-full transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
+            className="rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-10 py-3.5 font-semibold text-white shadow-lg shadow-amber-500/30 transition-all duration-200 hover:scale-105 active:scale-95"
           >
             Pause
           </button>
         )}
         <button
           onClick={handleReset}
-          className="bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white font-semibold py-3 px-8 md:px-10 rounded-full transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
+          aria-label="Reset timer"
+          className="glass flex h-12 w-12 items-center justify-center rounded-full text-gray-600 transition-all duration-200 hover:scale-105 active:scale-95 dark:text-gray-300"
         >
-          Reset
+          <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5" />
+          </svg>
         </button>
       </div>
 
-      {/* Status Indicator */}
-      <div className="flex items-center gap-2">
-        <div className={`w-3 h-3 rounded-full ${isRunning ? 'bg-green-500 animate-pulse' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
-        <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
-          {isRunning ? 'Timer Running' : timeLeft === 0 ? 'Session Complete!' : 'Timer Paused'}
-        </span>
+      {/* Completed counter */}
+      <div className="text-sm text-gray-500 dark:text-gray-400">
+        <span className="font-semibold text-gray-700 dark:text-gray-200">{completedSessions}</span> focus sessions completed
       </div>
     </div>
   )

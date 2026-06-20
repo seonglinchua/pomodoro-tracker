@@ -1,226 +1,171 @@
-import { useState, useEffect, useCallback } from 'react'
-import { db, firebaseEnabled } from '../firebase'
-import { collection, query, orderBy, getDocs, limit } from 'firebase/firestore'
-import { getTempUserId } from '../utils/tempUser'
 import { useTheme } from '../contexts/ThemeContext'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
+import {
+  getSummary,
+  getDailyData,
+  getTypeDistribution,
+  getRecentSessions,
+  getStreak,
+} from '../data/mockData'
+import {
+  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, PieChart, Pie, Cell,
+} from 'recharts'
 
 const COLORS = {
   work: '#f43f5e',
   'short break': '#14b8a6',
-  'long break': '#a855f7'
+  'long break': '#a855f7',
+}
+
+const labelFor = (type) =>
+  type.replace(/\b\w/g, (c) => c.toUpperCase())
+
+function StatTile({ label, value, suffix, gradient }) {
+  return (
+    <div className="glass card-hover animate-rise rounded-3xl p-5">
+      <div className="text-sm text-gray-500 dark:text-gray-400">{label}</div>
+      <div className={`font-display text-3xl font-bold ${gradient} bg-clip-text text-transparent`}>
+        {value}
+        {suffix && <span className="text-xl">{suffix}</span>}
+      </div>
+    </div>
+  )
+}
+
+function GlassTooltip({ active, payload, label, darkMode }) {
+  if (!active || !payload?.length) return null
+  return (
+    <div
+      className="rounded-xl border px-3 py-2 text-sm shadow-lg"
+      style={{
+        background: darkMode ? 'rgba(20,22,36,0.9)' : 'rgba(255,255,255,0.95)',
+        borderColor: darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
+        color: darkMode ? '#e8e9f0' : '#1a1b25',
+        backdropFilter: 'blur(8px)',
+      }}
+    >
+      {label && <div className="mb-1 font-semibold">{label}</div>}
+      {payload.map((p) => (
+        <div key={p.name} className="flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full" style={{ background: p.color || p.payload?.fill }} />
+          <span className="capitalize">{p.name}:</span>
+          <span className="font-semibold">{p.value}</span>
+        </div>
+      ))}
+    </div>
+  )
 }
 
 export default function Statistics() {
   const { darkMode } = useTheme()
-  const [sessions, setSessions] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [stats, setStats] = useState({
-    totalSessions: 0,
-    totalMinutes: 0,
-    workSessions: 0,
-    breakSessions: 0
-  })
-
-  const fetchSessions = useCallback(async () => {
-    // If Firebase is not configured, just show empty state
-    if (!firebaseEnabled || !db) {
-      console.log('Firebase not available. Statistics will show empty.')
-      setSessions([])
-      setLoading(false)
-      return
-    }
-
-    try {
-      const userId = getTempUserId()
-      const sessionsRef = collection(db, 'users', userId, 'sessions')
-      const q = query(sessionsRef, orderBy('startTime', 'desc'), limit(100))
-      const querySnapshot = await getDocs(q)
-
-      const sessionData = []
-      querySnapshot.forEach((doc) => {
-        sessionData.push({ id: doc.id, ...doc.data() })
-      })
-
-      setSessions(sessionData)
-      setStats({
-        totalSessions: sessionData.length,
-        totalMinutes: sessionData.reduce((sum, session) => sum + session.duration / 60, 0),
-        workSessions: sessionData.filter((s) => s.type === 'work').length,
-        breakSessions: sessionData.filter((s) => s.type !== 'work').length
-      })
-      setLoading(false)
-    } catch (error) {
-      console.error('Error fetching sessions:', error)
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    fetchSessions()
-  }, [fetchSessions])
-
-  // Prepare data for charts
-  const getSessionsByDate = () => {
-    const dateMap = {}
-    sessions.forEach(session => {
-      const date = session.date
-      if (!dateMap[date]) {
-        dateMap[date] = { date, work: 0, break: 0 }
-      }
-      if (session.type === 'work') {
-        dateMap[date].work++
-      } else {
-        dateMap[date].break++
-      }
-    })
-    return Object.values(dateMap).slice(0, 7).reverse()
-  }
-
-  const getSessionsByType = () => {
-    const typeMap = {}
-    sessions.forEach(session => {
-      typeMap[session.type] = (typeMap[session.type] || 0) + 1
-    })
-    return Object.entries(typeMap).map(([name, value]) => ({ name, value }))
-  }
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-8rem)]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-500 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading statistics...</p>
-        </div>
-      </div>
-    )
-  }
+  const summary = getSummary()
+  const daily = getDailyData(7)
+  const distribution = getTypeDistribution()
+  const recent = getRecentSessions(8)
+  const streak = getStreak()
+  const axisColor = darkMode ? '#9ca3af' : '#6b7280'
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      <h1 className="text-4xl font-bold text-gray-800 dark:text-white mb-8">Statistics</h1>
+    <div className="mx-auto max-w-6xl">
+      <div className="animate-rise mb-6 mt-2 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="font-display text-3xl font-bold tracking-tight text-gray-900 dark:text-white md:text-4xl">Insights</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Your focus, visualised. (Demo data)</p>
+        </div>
+        <div className="glass rounded-full px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
+          🔥 {streak}-day streak
+        </div>
+      </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-          <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Total Sessions</div>
-          <div className="text-3xl font-bold bg-gradient-to-r from-rose-500 to-orange-500 bg-clip-text text-transparent">
-            {stats.totalSessions}
-          </div>
-        </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-          <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Total Minutes</div>
-          <div className="text-3xl font-bold bg-gradient-to-r from-teal-500 to-cyan-500 bg-clip-text text-transparent">
-            {Math.round(stats.totalMinutes)}
-          </div>
-        </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-          <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Work Sessions</div>
-          <div className="text-3xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">
-            {stats.workSessions}
-          </div>
-        </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-          <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Break Sessions</div>
-          <div className="text-3xl font-bold bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent">
-            {stats.breakSessions}
-          </div>
-        </div>
+      {/* Stat tiles */}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatTile label="Focus sessions" value={summary.workSessions} gradient="bg-gradient-to-r from-rose-500 to-orange-500" />
+        <StatTile label="Focus time" value={summary.focusHours} suffix="h" gradient="bg-gradient-to-r from-teal-500 to-cyan-500" />
+        <StatTile label="Total sessions" value={summary.totalSessions} gradient="bg-gradient-to-r from-violet-500 to-fuchsia-500" />
+        <StatTile label="Breaks taken" value={summary.breakSessions} gradient="bg-gradient-to-r from-amber-500 to-orange-500" />
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Bar Chart - Sessions by Date */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-          <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">Sessions by Date</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={getSessionsByDate()}>
-              <CartesianGrid strokeDasharray="3 3" stroke={darkMode ? '#374151' : '#e5e7eb'} />
-              <XAxis dataKey="date" stroke={darkMode ? '#9ca3af' : '#6b7280'} />
-              <YAxis stroke={darkMode ? '#9ca3af' : '#6b7280'} />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: darkMode ? '#1f2937' : '#ffffff',
-                  border: darkMode ? 'none' : '1px solid #e5e7eb',
-                  borderRadius: '8px',
-                  color: darkMode ? '#f3f4f6' : '#1f2937'
-                }}
-                labelStyle={{ color: darkMode ? '#f3f4f6' : '#1f2937' }}
-              />
-              <Legend />
-              <Bar dataKey="work" fill="#f43f5e" name="Work" />
-              <Bar dataKey="break" fill="#14b8a6" name="Break" />
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        {/* Focus area chart */}
+        <div className="glass animate-rise rounded-3xl p-6 lg:col-span-2">
+          <h2 className="mb-4 font-display text-lg font-bold text-gray-900 dark:text-white">Focus minutes this week</h2>
+          <ResponsiveContainer width="100%" height={280}>
+            <AreaChart data={daily} margin={{ top: 10, right: 8, left: -16, bottom: 0 }}>
+              <defs>
+                <linearGradient id="focusArea" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#f43f5e" stopOpacity={0.5} />
+                  <stop offset="100%" stopColor="#fb923c" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={darkMode ? '#ffffff14' : '#0000000d'} />
+              <XAxis dataKey="label" stroke={axisColor} tickLine={false} axisLine={false} fontSize={12} />
+              <YAxis stroke={axisColor} tickLine={false} axisLine={false} fontSize={12} width={36} />
+              <Tooltip content={<GlassTooltip darkMode={darkMode} />} cursor={{ stroke: axisColor, strokeOpacity: 0.2 }} />
+              <Area type="monotone" dataKey="minutes" name="minutes" stroke="#f43f5e" strokeWidth={3} fill="url(#focusArea)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Distribution donut */}
+        <div className="glass animate-rise rounded-3xl p-6">
+          <h2 className="mb-4 font-display text-lg font-bold text-gray-900 dark:text-white">Session mix</h2>
+          <ResponsiveContainer width="100%" height={280}>
+            <PieChart>
+              <Pie data={distribution} cx="50%" cy="50%" innerRadius={62} outerRadius={96} paddingAngle={4} dataKey="value" stroke="none">
+                {distribution.map((entry) => (
+                  <Cell key={entry.name} fill={COLORS[entry.name] || '#666'} />
+                ))}
+              </Pie>
+              <Tooltip content={<GlassTooltip darkMode={darkMode} />} />
+            </PieChart>
+          </ResponsiveContainer>
+          <div className="mt-2 flex flex-wrap justify-center gap-3">
+            {distribution.map((entry) => (
+              <div key={entry.name} className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-300">
+                <span className="h-2.5 w-2.5 rounded-full" style={{ background: COLORS[entry.name] }} />
+                {labelFor(entry.name)}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Sessions per day + recent */}
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="glass animate-rise rounded-3xl p-6 lg:col-span-2">
+          <h2 className="mb-4 font-display text-lg font-bold text-gray-900 dark:text-white">Sessions per day</h2>
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={daily} margin={{ top: 10, right: 8, left: -16, bottom: 0 }} barGap={4}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={darkMode ? '#ffffff14' : '#0000000d'} />
+              <XAxis dataKey="label" stroke={axisColor} tickLine={false} axisLine={false} fontSize={12} />
+              <YAxis stroke={axisColor} tickLine={false} axisLine={false} fontSize={12} width={36} allowDecimals={false} />
+              <Tooltip content={<GlassTooltip darkMode={darkMode} />} cursor={{ fill: darkMode ? '#ffffff0a' : '#00000008' }} />
+              <Bar dataKey="work" name="work" fill="#f43f5e" radius={[6, 6, 0, 0]} />
+              <Bar dataKey="break" name="break" fill="#14b8a6" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
-        {/* Pie Chart - Sessions by Type */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-          <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">Sessions by Type</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={getSessionsByType()}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                outerRadius={100}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {getSessionsByType().map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[entry.name] || '#666'} />
-                ))}
-              </Pie>
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: darkMode ? '#1f2937' : '#ffffff',
-                  border: darkMode ? 'none' : '1px solid #e5e7eb',
-                  borderRadius: '8px',
-                  color: darkMode ? '#f3f4f6' : '#1f2937'
-                }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Recent Sessions Table */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-        <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">Recent Sessions</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200 dark:border-gray-700">
-                <th className="text-left py-3 px-4 text-gray-600 dark:text-gray-400 font-semibold">Date</th>
-                <th className="text-left py-3 px-4 text-gray-600 dark:text-gray-400 font-semibold">Type</th>
-                <th className="text-left py-3 px-4 text-gray-600 dark:text-gray-400 font-semibold">Duration</th>
-                <th className="text-left py-3 px-4 text-gray-600 dark:text-gray-400 font-semibold">Time</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sessions.slice(0, 10).map((session) => (
-                <tr key={session.id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                  <td className="py-3 px-4 text-gray-800 dark:text-gray-300">{session.date}</td>
-                  <td className="py-3 px-4">
-                    <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium text-white`} style={{ backgroundColor: COLORS[session.type] }}>
-                      {session.type}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-gray-800 dark:text-gray-300">{session.duration / 60} min</td>
-                  <td className="py-3 px-4 text-gray-600 dark:text-gray-400 text-sm">
-                    {new Date(session.startTime).toLocaleTimeString()}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {sessions.length === 0 && (
-            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-              No sessions yet. Complete a pomodoro session to see statistics!
-            </div>
-          )}
+        <div className="glass animate-rise rounded-3xl p-6">
+          <h2 className="mb-4 font-display text-lg font-bold text-gray-900 dark:text-white">Recent sessions</h2>
+          <div className="space-y-2">
+            {recent.map((s) => (
+              <div key={s.id} className="flex items-center justify-between rounded-2xl px-3 py-2.5 transition-colors hover:bg-white/40 dark:hover:bg-white/5">
+                <div className="flex items-center gap-3">
+                  <span className="h-2.5 w-2.5 rounded-full" style={{ background: COLORS[s.type] }} />
+                  <div>
+                    <div className="text-sm font-semibold text-gray-800 dark:text-gray-100">{labelFor(s.type)}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      {new Date(s.startTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} ·{' '}
+                      {new Date(s.startTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                    </div>
+                  </div>
+                </div>
+                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{s.duration / 60}m</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
