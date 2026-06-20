@@ -1,6 +1,31 @@
 import { useTheme } from '../contexts/ThemeContext'
 import { getTempUserId, clearTempUserId, getCurrentTempUserId } from '../utils/tempUser'
 
+function SettingsCard({ title, children, badge }) {
+  return (
+    <div className="glass animate-rise rounded-3xl p-6">
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="font-display text-lg font-bold text-gray-900 dark:text-white">{title}</h2>
+        {badge}
+      </div>
+      {children}
+    </div>
+  )
+}
+
+function DurationField({ label, value, accent }) {
+  return (
+    <div>
+      <label className="mb-1.5 block text-sm font-medium text-gray-600 dark:text-gray-300">{label}</label>
+      <div className="glass-subtle flex items-center justify-between rounded-2xl px-4 py-3">
+        <span className="font-display text-xl font-bold text-gray-800 dark:text-white">{value}</span>
+        <span className="text-xs text-gray-400 dark:text-gray-500">min</span>
+      </div>
+      <div className={`mt-1.5 h-1 rounded-full bg-gradient-to-r ${accent} opacity-60`} />
+    </div>
+  )
+}
+
 export default function Settings() {
   const { darkMode, toggleDarkMode } = useTheme()
   const currentUserId = getCurrentTempUserId()
@@ -20,126 +45,88 @@ export default function Settings() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <h1 className="text-4xl font-bold text-gray-800 dark:text-white mb-8">Settings</h1>
+    <div className="mx-auto max-w-2xl">
+      <div className="animate-rise mb-6 mt-2">
+        <h1 className="font-display text-3xl font-bold tracking-tight text-gray-900 dark:text-white md:text-4xl">Settings</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400">Personalise your focus experience.</p>
+      </div>
 
-      <div className="space-y-6">
-        {/* Theme Settings */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-          <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">Appearance</h2>
+      <div className="space-y-5">
+        {/* Appearance */}
+        <SettingsCard title="Appearance">
           <div className="flex items-center justify-between">
             <div>
-              <div className="font-medium text-gray-800 dark:text-white">Dark Mode</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Toggle dark/light theme</div>
+              <div className="font-medium text-gray-800 dark:text-white">Dark mode</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">Easier on the eyes at night</div>
             </div>
             <button
               onClick={toggleDarkMode}
               role="switch"
               aria-checked={darkMode}
               aria-label="Toggle dark mode"
-              className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
-                darkMode ? 'bg-gradient-to-r from-purple-500 to-pink-500' : 'bg-gray-300'
+              className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors duration-300 ${
+                darkMode ? 'bg-gradient-to-r from-violet-500 to-fuchsia-500' : 'bg-gray-300'
               }`}
             >
               <span
-                className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
+                className={`flex h-6 w-6 transform items-center justify-center rounded-full bg-white text-xs shadow transition-transform duration-300 ${
                   darkMode ? 'translate-x-7' : 'translate-x-1'
                 }`}
               >
-                <span className="flex items-center justify-center h-full text-xs">
-                  {darkMode ? '🌙' : '☀️'}
-                </span>
+                {darkMode ? '🌙' : '☀️'}
               </span>
             </button>
           </div>
-        </div>
+        </SettingsCard>
 
-        {/* Timer Settings */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-          <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">Timer Durations</h2>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Work Session (minutes)
-              </label>
-              <input
-                type="number"
-                defaultValue="25"
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-rose-500 focus:border-transparent"
-                disabled
-              />
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Custom durations coming soon!</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Short Break (minutes)
-              </label>
-              <input
-                type="number"
-                defaultValue="5"
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                disabled
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Long Break (minutes)
-              </label>
-              <input
-                type="number"
-                defaultValue="15"
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                disabled
-              />
-            </div>
+        {/* Timer durations */}
+        <SettingsCard
+          title="Timer durations"
+          badge={<span className="rounded-full bg-amber-500/15 px-2.5 py-1 text-xs font-semibold text-amber-600 dark:text-amber-400">Soon</span>}
+        >
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <DurationField label="Work" value="25" accent="from-rose-500 to-orange-500" />
+            <DurationField label="Short break" value="5" accent="from-teal-500 to-cyan-500" />
+            <DurationField label="Long break" value="15" accent="from-violet-500 to-fuchsia-500" />
           </div>
-        </div>
+          <p className="mt-3 text-xs text-gray-400 dark:text-gray-500">Custom durations are coming soon.</p>
+        </SettingsCard>
 
-        {/* User Data */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-          <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">User Data</h2>
+        {/* User data */}
+        <SettingsCard title="Your data">
           <div className="space-y-4">
             <div>
-              <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Current User ID</div>
-              <div className="px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg text-sm text-gray-800 dark:text-gray-300 font-mono break-all">
+              <div className="mb-1.5 text-sm font-medium text-gray-600 dark:text-gray-300">Current user ID</div>
+              <div className="glass-subtle break-all rounded-2xl px-4 py-3 font-mono text-sm text-gray-700 dark:text-gray-200">
                 {currentUserId || 'No ID generated yet'}
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                This is your temporary user ID. Your sessions are saved under this ID.
-              </p>
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row">
               <button
                 onClick={handleGenerateNewId}
-                className="flex-1 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
+                className="flex-1 rounded-2xl bg-gradient-to-r from-teal-500 to-cyan-500 px-4 py-2.5 font-semibold text-white shadow-lg shadow-teal-500/25 transition-all duration-200 hover:scale-[1.02] active:scale-95"
               >
-                Generate New ID
+                Generate new ID
               </button>
               <button
                 onClick={handleClearData}
-                className="flex-1 bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
+                className="glass flex-1 rounded-2xl px-4 py-2.5 font-semibold text-rose-600 transition-all duration-200 hover:scale-[1.02] active:scale-95 dark:text-rose-400"
               >
-                Clear All Data
+                Clear all data
               </button>
             </div>
           </div>
-        </div>
+        </SettingsCard>
 
         {/* About */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-          <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">About</h2>
-          <div className="space-y-2 text-gray-600 dark:text-gray-400">
+        <SettingsCard title="About">
+          <div className="space-y-2 text-sm leading-relaxed text-gray-600 dark:text-gray-300">
             <p>
-              <strong className="text-gray-800 dark:text-white">Pomodoro Tracker</strong> helps you stay focused and productive using the Pomodoro Technique.
+              <strong className="text-gray-800 dark:text-white">Pomofocus</strong> helps you stay focused using the Pomodoro Technique — work in focused sprints and track your progress over time.
             </p>
-            <p>
-              Work in 25-minute focused sessions, take short breaks, and track your progress over time.
-            </p>
-            <p className="text-sm mt-4">
-              Version 1.0.0 | Built with React + Firebase
-            </p>
+            <p className="pt-2 text-xs text-gray-400 dark:text-gray-500">Version 1.0.0 · Built with React, Vite &amp; Tailwind</p>
           </div>
-        </div>
+        </SettingsCard>
       </div>
     </div>
   )
