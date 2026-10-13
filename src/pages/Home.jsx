@@ -1,5 +1,6 @@
 import Timer from '../components/Timer'
-import { getTodayStats, getStreak } from '../data/mockData'
+import { useSessions } from '../utils/sessionStore'
+import { getTodayStats, getStreak } from '../utils/stats'
 
 function greeting() {
   const h = new Date().getHours()
@@ -37,20 +38,21 @@ function GoalRing({ value, goal }) {
       </svg>
       <div className="absolute flex flex-col items-center">
         <span className="font-display text-2xl font-bold text-gray-900 dark:text-white">{value}</span>
-        <span className="text-xs text-gray-500 dark:text-gray-400">of {goal}</span>
+        <span className="text-xs text-gray-600 dark:text-gray-400">of {goal}</span>
       </div>
     </div>
   )
 }
 
 export default function Home() {
-  const today = getTodayStats()
-  const streak = getStreak()
+  const sessions = useSessions()
+  const today = getTodayStats(sessions)
+  const streak = getStreak(sessions)
 
   return (
     <div className="mx-auto max-w-6xl">
       <div className="animate-rise mb-6 mt-2">
-        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{greeting()} 👋</p>
+        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{greeting()} 👋</p>
         <h1 className="font-display text-3xl font-bold tracking-tight text-gray-900 dark:text-white md:text-4xl">
           Let&apos;s get into focus.
         </h1>
@@ -58,7 +60,7 @@ export default function Home() {
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         {/* Timer card */}
-        <div className="glass card-hover animate-rise rounded-[2rem] p-8 md:p-10 lg:col-span-2">
+        <div className="glass card-hover animate-rise rounded-[2rem] p-5 sm:p-8 md:p-10 lg:col-span-2">
           <Timer />
         </div>
 
@@ -74,11 +76,11 @@ export default function Home() {
               <div className="space-y-3 text-sm">
                 <div>
                   <div className="font-display text-2xl font-bold text-gray-900 dark:text-white">{today.focusMinutes}m</div>
-                  <div className="text-gray-500 dark:text-gray-400">focused today</div>
+                  <div className="text-gray-600 dark:text-gray-400">focused today</div>
                 </div>
                 <div>
                   <div className="font-display text-2xl font-bold text-gray-900 dark:text-white">🔥 {streak}</div>
-                  <div className="text-gray-500 dark:text-gray-400">day streak</div>
+                  <div className="text-gray-600 dark:text-gray-400">{streak === 1 ? 'day' : 'days'} streak</div>
                 </div>
               </div>
             </div>

@@ -1,4 +1,5 @@
 import { useTimer } from '../contexts/TimerContext'
+import { formatTime } from '../utils/time'
 
 // Flat-vector tomato palettes per session type. Everything else (shading,
 // highlights) is black/white overlays, so only three colours vary.
@@ -169,24 +170,18 @@ export default function Timer() {
   const palette = TOMATOES[sessionType]
   const isComplete = timeLeft === 0
 
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
-  }
-
   const statusLabel = isRunning ? 'Focusing' : isComplete ? 'Complete' : 'Ready'
 
   return (
     <div className="flex flex-col items-center gap-6">
       {/* Session type segmented control */}
-      <div className="glass-subtle flex flex-wrap justify-center gap-1 rounded-full p-1">
+      <div className="glass-subtle flex w-full max-w-sm justify-center gap-1 rounded-full p-1">
         {Object.entries(SESSION_TYPES).map(([key, value]) => (
           <button
             key={key}
             onClick={() => handleSessionChange(key)}
             disabled={isRunning}
-            className={`rounded-full px-4 py-2 text-sm font-semibold transition-all duration-300 md:px-5 ${
+            className={`flex-1 whitespace-nowrap rounded-full px-2 py-2 text-sm font-semibold transition-all duration-300 sm:px-4 ${
               sessionType === key
                 ? 'bg-gradient-to-r ' + value.color + ' text-white shadow-lg'
                 : 'text-gray-600 hover:bg-white/40 dark:text-gray-300 dark:hover:bg-white/10'
@@ -242,8 +237,13 @@ export default function Timer() {
       </div>
 
       {/* Completed counter */}
-      <div className="text-sm text-gray-500 dark:text-gray-400">
-        <span className="font-semibold text-gray-700 dark:text-gray-200">{completedSessions}</span> focus sessions completed
+      <div className="text-sm text-gray-600 dark:text-gray-400">
+        <span className="font-semibold text-gray-800 dark:text-gray-200">{completedSessions}</span> focus {completedSessions === 1 ? 'session' : 'sessions'} today
+      </div>
+
+      {/* Announce completion to screen readers */}
+      <div role="status" aria-live="polite" className="sr-only">
+        {isComplete ? `${currentSession.label} session complete` : ''}
       </div>
     </div>
   )

@@ -42,8 +42,8 @@ export default function Navigation() {
           <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-500 to-orange-500 shadow-lg shadow-rose-500/30">
             <span className="text-lg">🍅</span>
           </span>
-          <span className="font-display text-lg font-bold tracking-tight text-gray-900 dark:text-white">
-            Pomo<span className="bg-gradient-to-r from-rose-500 to-orange-500 bg-clip-text text-transparent">focus</span>
+          <span className="hidden font-display text-lg font-bold tracking-tight text-gray-900 dark:text-white min-[480px]:inline">
+            Pomodoro <span className="bg-gradient-to-r from-rose-500 to-orange-500 bg-clip-text text-transparent">Tracker</span>
           </span>
         </Link>
 
