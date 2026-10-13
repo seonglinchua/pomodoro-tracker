@@ -2,25 +2,37 @@ import { createContext, useContext, useEffect, useState } from 'react'
 
 const ThemeContext = createContext()
 
+const STORAGE_KEY = 'darkMode'
+
+// An explicit choice (saved when the user toggles) wins; otherwise follow the OS.
+// index.html applies the same rule before first paint so there's no flash.
+const getInitialDarkMode = () => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (saved !== null) {
+      return JSON.parse(saved) === true
+    }
+  } catch {
+    // Fall through to the system preference
+  }
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false
+}
+
 export function ThemeProvider({ children }) {
-  const [darkMode, setDarkMode] = useState(() => {
-    const saved = localStorage.getItem('darkMode')
-    return saved ? JSON.parse(saved) : false
-  })
+  const [darkMode, setDarkMode] = useState(getInitialDarkMode)
 
   useEffect(() => {
-    console.log(`Dark mode ${darkMode ? 'enabled' : 'disabled'}`)
-    localStorage.setItem('darkMode', JSON.stringify(darkMode))
-    if (darkMode) {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-    }
+    document.documentElement.classList.toggle('dark', darkMode)
   }, [darkMode])
 
   const toggleDarkMode = () => {
-    console.log(`Toggling dark mode from ${darkMode ? 'on' : 'off'} to ${darkMode ? 'off' : 'on'}`)
-    setDarkMode(!darkMode)
+    const next = !darkMode
+    setDarkMode(next)
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+    } catch {
+      // Preference just won't persist
+    }
   }
 
   return (

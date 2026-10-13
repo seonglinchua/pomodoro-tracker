@@ -5,25 +5,28 @@ A modern, feature-rich productivity app built with React, Vite, and Firebase tha
 ## ✨ Features
 
 ### Implemented
-- ⏱️ **Pomodoro Timer** - 25-minute work sessions, 5-minute short breaks, 15-minute long breaks
-- 📊 **Session Tracking** - All sessions automatically saved to Firebase Firestore
-- 📈 **Statistics Dashboard** - Beautiful charts showing your productivity trends
-  - Bar chart showing sessions by date
-  - Pie chart showing session type breakdown
-  - Summary cards with total sessions, minutes, and breakdowns
-  - Recent sessions table with detailed history
-- 🎨 **Modern UI** - Beautiful gradients, smooth animations, and responsive design
-- 🌙 **Dark Mode** - Toggle between light and dark themes
+- ⏱️ **Pomodoro Timer** - A flat-vector tomato kitchen timer: 25-minute work sessions, 5-minute short breaks and 15-minute long breaks, with a rotating minute dial, the countdown in the browser tab title, and a tomato that changes colour per session type
+- 📊 **Session Tracking** - Every completed session is logged in your browser (localStorage) so the app works with no setup, and also backed up to Firebase Firestore when it is configured
+- 📈 **Insights Dashboard** - Charts built from your own sessions
+  - Stat tiles: focus sessions, focus time, total sessions and breaks
+  - Area chart of focus minutes over the last 7 days
+  - Donut chart of the session mix
+  - Bar chart of work and break sessions per day
+  - Recent sessions list
+  - Shows clearly labelled demo data until you finish your first session
+- 🎯 **Daily Goal & Streak** - Home shows today's progress toward an 8-session goal, minutes focused, and your day streak
+- 🎨 **Modern UI** - Aurora-glass design with frosted surfaces, soft motion (respects reduced-motion) and a responsive layout
+- 🌙 **Dark Mode** - Follows your system setting by default; toggle it any time and your choice is remembered
 - 📱 **Responsive Design** - Works seamlessly on desktop, tablet, and mobile
-- 🔄 **Cloud Sync** - Completed sessions saved to Firebase Firestore (on completion, and loaded on the Statistics page)
+- 🔄 **Firestore backup** - When configured, completed sessions are also written to Firestore (write-only for now; the dashboards read the local log)
 - 🚀 **Auto-Deploy** - GitHub Actions automatically deploys to GitHub Pages
 - ⚙️ **Settings Page** - Customize appearance and manage user data
 - 🛡️ **Error Boundary** - Graceful error handling with helpful troubleshooting tips
-- 💾 **localStorage-only Mode** - App works without Firebase configuration (timer-only mode)
+- 💾 **localStorage-only Mode** - The full app works without Firebase configuration
 
 ### Coming Soon
 - 🔐 User Authentication (currently using temporary user IDs)
-- 🎯 Daily Goals with progress indicators
+- 🎯 Customizable daily goal (currently fixed at 8 sessions)
 - 🔔 Notifications when sessions complete
 - ⏰ Customizable timer durations
 - 📝 Session notes and tags
@@ -112,8 +115,8 @@ npm run build
 
 1. **Without `.env.local` file**: The app will automatically detect missing Firebase configuration and run in localStorage-only mode
 2. **Timer functionality**: All timer features work normally
-3. **No data persistence**: Session data won't be saved to Firestore (only logged to console)
-4. **Statistics page**: Will show empty state with helpful message
+3. **Sessions are kept locally**: They are stored in your browser's localStorage (not synced to any server)
+4. **Insights page**: Works from your local sessions (demo data is shown until you finish one)
 
 ### To use localStorage-only mode:
 
@@ -130,7 +133,7 @@ Firebase configuration not found. Running in localStorage-only mode.
 To enable Firebase, create a .env.local file with your Firebase credentials.
 ```
 
-The app will work perfectly for timing your pomodoro sessions, just without the statistics persistence.
+Everything works, including Home and Insights. The only things you lose are the Firestore backup and syncing across browsers or devices.
 
 ## 📁 Project Structure
 
@@ -143,18 +146,23 @@ pomodoro-tracker/
 │   └── vite.svg
 ├── src/
 │   ├── components/
-│   │   ├── Timer.jsx           # Main Pomodoro timer component
+│   │   ├── Timer.jsx           # SVG tomato timer + controls
 │   │   ├── Navigation.jsx      # Top navigation bar
 │   │   ├── Layout.jsx          # App layout wrapper
 │   │   └── ErrorBoundary.jsx   # Error boundary for graceful error handling
 │   ├── pages/
-│   │   ├── Home.jsx            # Timer page
-│   │   ├── Statistics.jsx      # Charts and session history
+│   │   ├── Home.jsx            # Timer page with today's goal and streak
+│   │   ├── Statistics.jsx      # Insights: charts and recent sessions
 │   │   └── Settings.jsx        # App settings and theme toggle
+│   ├── data/
+│   │   └── mockData.js         # Demo sessions shown until you have real ones
 │   ├── contexts/
 │   │   ├── ThemeContext.jsx    # Dark mode context
 │   │   └── TimerContext.jsx    # Timer state and session saving
 │   ├── utils/
+│   │   ├── sessionStore.js     # Local session log (localStorage) + useSessions hook
+│   │   ├── stats.js            # Pure helpers: summaries, daily series, streak
+│   │   ├── time.js             # mm:ss formatter
 │   │   └── tempUser.js         # Temporary user ID management
 │   ├── firebase.js             # Firebase configuration
 │   ├── App.jsx                 # Main app with routing
@@ -176,24 +184,27 @@ pomodoro-tracker/
 1. Select your session type (Work, Short Break, or Long Break)
 2. Click the "Start" button
 3. Focus on your task while the timer counts down
-4. When complete, the session automatically saves to Firebase
+4. When complete, the session is logged in your browser (and backed up to Firebase if configured)
 5. Take a break or start another session!
 
-### Viewing Statistics
+### Viewing Insights
 
-1. Click "Statistics" in the navigation
+1. Click "Insights" in the navigation
 2. See your productivity visualized with:
-   - **Summary cards** - Total sessions, minutes, work/break counts
-   - **Bar chart** - Sessions per day over the past week
-   - **Pie chart** - Session type distribution
-   - **Recent sessions table** - Detailed history of your last 10 sessions
+   - **Stat tiles** - Focus sessions, focus time, total sessions and breaks
+   - **Area chart** - Focus minutes per day over the past week
+   - **Donut chart** - Session type distribution
+   - **Bar chart** - Work vs break sessions per day
+   - **Recent sessions** - Your latest sessions
+
+Until you finish a session, the page shows demo data and says so.
 
 ### Customizing Settings
 
 1. Click "Settings" in the navigation
 2. Toggle dark mode on/off
 3. View your current user ID
-4. Generate a new user ID or clear all data if needed
+4. Generate a new user ID, or clear your session history and user ID from this browser
 
 ## 📊 Firebase Firestore Schema
 
@@ -202,6 +213,8 @@ pomodoro-tracker/
 ```
 users/{tempUserId}/sessions/{sessionId}
 ```
+
+> Firestore is currently a **write-only backup**: the app records sessions here but the dashboards read the local log. `date` is the **local** calendar day of the session.
 
 ### Session Document
 
@@ -215,6 +228,8 @@ users/{tempUserId}/sessions/{sessionId}
   completed: true
 }
 ```
+
+> ⚠️ **Security:** there is no authentication yet, and sessions are stored under a guessable temporary user ID. With Firestore in test mode, anyone can read or write the database. Treat this as a demo, and add Firebase Auth and security rules before storing real user data.
 
 ## 🔄 Automatic Deployment
 
@@ -287,9 +302,9 @@ git push origin feature/your-feature
 ## 🌙 Dark Mode
 
 Dark mode is implemented using:
-- **Tailwind CSS** dark mode classes (`dark:`)
+- **Tailwind CSS** `dark:` classes, wired to the `.dark` class with a `@custom-variant` in `src/index.css` (Tailwind v4 defaults to the system setting)
 - **React Context** for theme state management
-- **localStorage** for persistence across sessions
+- **localStorage** to remember an explicit choice; otherwise the system preference is used, applied before first paint by a small script in `index.html` so there is no flash
 
 The theme automatically applies to all pages and components.
 
@@ -344,12 +359,9 @@ If you still see a blank page:
 - Verify all secrets are set in repository settings
 - Ensure `vite.config.js` has correct `base` path
 
-### Statistics Not Loading
-- **Without Firebase**: Statistics will show "No sessions yet" message
-- **With Firebase**:
-  - Open browser console to check for errors
-  - Verify Firebase Firestore rules allow reads
-  - Ensure you have completed at least one session
+### Insights Shows Demo Data
+- That's expected until you finish your first session. Complete one on the Timer page and the page switches to your own stats.
+- Sessions live in your browser's localStorage, so clearing site data, using a private window or switching browsers starts you from zero.
 
 ### Error Boundary Displayed
 If you see the error boundary page:

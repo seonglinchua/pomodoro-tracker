@@ -1,5 +1,6 @@
 import { useTheme } from '../contexts/ThemeContext'
 import { getTempUserId, clearTempUserId, getCurrentTempUserId } from '../utils/tempUser'
+import { clearSessions } from '../utils/sessionStore'
 
 function SettingsCard({ title, children, badge }) {
   return (
@@ -19,7 +20,7 @@ function DurationField({ label, value, accent }) {
       <label className="mb-1.5 block text-sm font-medium text-gray-600 dark:text-gray-300">{label}</label>
       <div className="glass-subtle flex items-center justify-between rounded-2xl px-4 py-3">
         <span className="font-display text-xl font-bold text-gray-800 dark:text-white">{value}</span>
-        <span className="text-xs text-gray-400 dark:text-gray-500">min</span>
+        <span className="text-xs text-gray-500 dark:text-gray-400">min</span>
       </div>
       <div className={`mt-1.5 h-1 rounded-full bg-gradient-to-r ${accent} opacity-60`} />
     </div>
@@ -31,9 +32,10 @@ export default function Settings() {
   const currentUserId = getCurrentTempUserId()
 
   const handleClearData = () => {
-    if (confirm('Are you sure you want to clear all your data? This action cannot be undone.')) {
+    if (confirm('Clear your session history and user ID from this browser? This cannot be undone.')) {
+      clearSessions()
       clearTempUserId()
-      alert('Data cleared! Refresh the page to start fresh.')
+      window.location.reload()
     }
   }
 
@@ -48,7 +50,7 @@ export default function Settings() {
     <div className="mx-auto max-w-2xl">
       <div className="animate-rise mb-6 mt-2">
         <h1 className="font-display text-3xl font-bold tracking-tight text-gray-900 dark:text-white md:text-4xl">Settings</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400">Personalise your focus experience.</p>
+        <p className="text-sm text-gray-600 dark:text-gray-400">Personalise your focus experience.</p>
       </div>
 
       <div className="space-y-5">
@@ -57,7 +59,7 @@ export default function Settings() {
           <div className="flex items-center justify-between">
             <div>
               <div className="font-medium text-gray-800 dark:text-white">Dark mode</div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">Easier on the eyes at night</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Easier on the eyes at night</div>
             </div>
             <button
               onClick={toggleDarkMode}
@@ -89,7 +91,7 @@ export default function Settings() {
             <DurationField label="Short break" value="5" accent="from-teal-500 to-cyan-500" />
             <DurationField label="Long break" value="15" accent="from-violet-500 to-fuchsia-500" />
           </div>
-          <p className="mt-3 text-xs text-gray-400 dark:text-gray-500">Custom durations are coming soon.</p>
+          <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">Custom durations are coming soon.</p>
         </SettingsCard>
 
         {/* User data */}
@@ -122,9 +124,9 @@ export default function Settings() {
         <SettingsCard title="About">
           <div className="space-y-2 text-sm leading-relaxed text-gray-600 dark:text-gray-300">
             <p>
-              <strong className="text-gray-800 dark:text-white">Pomofocus</strong> helps you stay focused using the Pomodoro Technique — work in focused sprints and track your progress over time.
+              <strong className="text-gray-800 dark:text-white">Pomodoro Tracker</strong> helps you stay focused using the Pomodoro Technique — work in focused sprints and track your progress over time.
             </p>
-            <p className="pt-2 text-xs text-gray-400 dark:text-gray-500">Version 1.0.0 · Built with React, Vite &amp; Tailwind</p>
+            <p className="pt-2 text-xs text-gray-500 dark:text-gray-400">Version 1.0.0 · Built with React, Vite &amp; Tailwind</p>
           </div>
         </SettingsCard>
       </div>

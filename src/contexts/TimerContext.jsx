@@ -1,7 +1,12 @@
-import { createContext, useCallback, useContext, useEffect, useState, useRef } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, useRef } from 'react'
 import { db, firebaseEnabled } from '../firebase'
 import { collection, addDoc } from 'firebase/firestore'
 import { getTempUserId } from '../utils/tempUser'
+import { addSession, useSessions } from '../utils/sessionStore'
+import { dateKey, getTodayStats } from '../utils/stats'
+import { formatTime } from '../utils/time'
+
+const APP_TITLE = 'Pomodoro Tracker'
 
 const SESSION_TYPES = {
   WORK: { duration: 25 * 60, label: 'Work', color: 'from-rose-500 to-orange-500' },
@@ -9,10 +14,7 @@ const SESSION_TYPES = {
   LONG_BREAK: { duration: 15 * 60, label: 'Long Break', color: 'from-purple-500 to-pink-500' }
 }
 
-const STORAGE_KEYS = {
-  sessionType: 'pomodoroSessionType',
-  completedSessions: 'pomodoroCompletedSessions'
-}
+const SESSION_TYPE_KEY = 'pomodoroSessionType'
 
 // localStorage can throw (private mode, quota, disabled) — keep reads/writes safe
 const readStorage = (key) => {
@@ -32,13 +34,8 @@ const writeStorage = (key, value) => {
 }
 
 const getInitialSessionType = () => {
-  const saved = readStorage(STORAGE_KEYS.sessionType)
+  const saved = readStorage(SESSION_TYPE_KEY)
   return saved && SESSION_TYPES[saved] ? saved : 'WORK'
-}
-
-const getInitialCompletedSessions = () => {
-  const saved = parseInt(readStorage(STORAGE_KEYS.completedSessions), 10)
-  return Number.isFinite(saved) && saved >= 0 ? saved : 0
 }
 
 const TimerContext = createContext()
@@ -47,7 +44,6 @@ export function TimerProvider({ children }) {
   const [sessionType, setSessionType] = useState(getInitialSessionType)
   const [timeLeft, setTimeLeft] = useState(() => SESSION_TYPES[getInitialSessionType()].duration)
   const [isRunning, setIsRunning] = useState(false)
-  const [completedSessions, setCompletedSessions] = useState(getInitialCompletedSessions)
   const [sessionStartTime, setSessionStartTime] = useState(null)
   const intervalRef = useRef(null)
   const endTimeRef = useRef(null)
@@ -55,41 +51,29 @@ export function TimerProvider({ children }) {
 
   const currentSession = SESSION_TYPES[sessionType]
 
-  // Persist lightweight state so a reload keeps your session type and count
+  // Focus sessions finished today, derived from the session log
+  const sessions = useSessions()
+  const completedSessions = useMemo(() => getTodayStats(sessions).workSessions, [sessions])
+
+  // Remember the selected session type across reloads
   useEffect(() => {
-    writeStorage(STORAGE_KEYS.sessionType, sessionType)
+    writeStorage(SESSION_TYPE_KEY, sessionType)
   }, [sessionType])
 
+  // Show the countdown in the browser tab while a session is running
   useEffect(() => {
-    writeStorage(STORAGE_KEYS.completedSessions, String(completedSessions))
-  }, [completedSessions])
+    document.title = isRunning ? `${formatTime(timeLeft)} · ${APP_TITLE}` : APP_TITLE
+  }, [isRunning, timeLeft])
 
-  // Save a completed session to Firestore (no-op when Firebase isn't configured)
-  const saveSession = useCallback(async (type, startTime, endTime, duration) => {
+  // Back a completed session up to Firestore (no-op when Firebase isn't configured)
+  const saveToFirestore = useCallback(async (session) => {
     if (!firebaseEnabled || !db) {
-      console.log('Firebase not available. Session data:', {
-        type: type.toLowerCase(),
-        startTime,
-        endTime,
-        duration,
-        date: new Date().toISOString().split('T')[0]
-      })
       return
     }
 
     try {
       const userId = getTempUserId()
-      const sessionData = {
-        type: type.toLowerCase(),
-        startTime,
-        endTime,
-        duration,
-        date: new Date().toISOString().split('T')[0],
-        completed: true
-      }
-
-      await addDoc(collection(db, 'users', userId, 'sessions'), sessionData)
-      console.log('Session saved to Firestore:', sessionData)
+      await addDoc(collection(db, 'users', userId, 'sessions'), session)
     } catch (error) {
       console.error('Error saving session to Firestore:', error)
     }
@@ -128,12 +112,19 @@ export function TimerProvider({ children }) {
     }
 
     sessionSavedRef.current = true
-    const endTime = new Date().toISOString()
-    saveSession(currentSession.label, sessionStartTime, endTime, currentSession.duration)
-    if (sessionType === 'WORK') {
-      setCompletedSessions((count) => count + 1)
+    const endTime = new Date()
+    const session = {
+      type: currentSession.label.toLowerCase(),
+      startTime: sessionStartTime,
+      endTime: endTime.toISOString(),
+      duration: currentSession.duration,
+      date: dateKey(endTime),
+      completed: true
     }
-  }, [timeLeft, sessionStartTime, sessionType, currentSession, saveSession])
+
+    addSession(session)
+    saveToFirestore(session)
+  }, [timeLeft, sessionStartTime, currentSession, saveToFirestore])
 
   const handleStart = () => {
     if (timeLeft === 0) {

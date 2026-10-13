@@ -1,11 +1,13 @@
 import { useTheme } from '../contexts/ThemeContext'
+import { mockSessions } from '../data/mockData'
+import { useSessions } from '../utils/sessionStore'
 import {
   getSummary,
   getDailyData,
   getTypeDistribution,
   getRecentSessions,
   getStreak,
-} from '../data/mockData'
+} from '../utils/stats'
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell,
@@ -23,7 +25,7 @@ const labelFor = (type) =>
 function StatTile({ label, value, suffix, gradient }) {
   return (
     <div className="glass card-hover animate-rise rounded-3xl p-5">
-      <div className="text-sm text-gray-500 dark:text-gray-400">{label}</div>
+      <div className="text-sm text-gray-600 dark:text-gray-400">{label}</div>
       <div className={`font-display text-3xl font-bold ${gradient} bg-clip-text text-transparent`}>
         {value}
         {suffix && <span className="text-xl">{suffix}</span>}
@@ -58,11 +60,16 @@ function GlassTooltip({ active, payload, label, darkMode }) {
 
 export default function Statistics() {
   const { darkMode } = useTheme()
-  const summary = getSummary()
-  const daily = getDailyData(7)
-  const distribution = getTypeDistribution()
-  const recent = getRecentSessions(8)
-  const streak = getStreak()
+  const realSessions = useSessions()
+  // Until the first real session is recorded, show demo data so the page isn't empty
+  const isDemo = realSessions.length === 0
+  const sessions = isDemo ? mockSessions : realSessions
+
+  const summary = getSummary(sessions)
+  const daily = getDailyData(sessions, 7)
+  const distribution = getTypeDistribution(sessions)
+  const recent = getRecentSessions(sessions, 7)
+  const streak = getStreak(sessions)
   const axisColor = darkMode ? '#9ca3af' : '#6b7280'
 
   return (
@@ -70,12 +77,18 @@ export default function Statistics() {
       <div className="animate-rise mb-6 mt-2 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-display text-3xl font-bold tracking-tight text-gray-900 dark:text-white md:text-4xl">Insights</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Your focus, visualised. (Demo data)</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">Your focus, visualised.</p>
         </div>
         <div className="glass rounded-full px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
           🔥 {streak}-day streak
         </div>
       </div>
+
+      {isDemo && (
+        <div role="note" className="glass-subtle animate-rise mb-4 rounded-2xl px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+          <span className="font-semibold">Showing demo data.</span> Finish a focus session on the Timer page and your own stats will replace it.
+        </div>
+      )}
 
       {/* Stat tiles */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -91,7 +104,7 @@ export default function Statistics() {
         <div className="glass animate-rise rounded-3xl p-6 lg:col-span-2">
           <h2 className="mb-4 font-display text-lg font-bold text-gray-900 dark:text-white">Focus minutes this week</h2>
           <ResponsiveContainer width="100%" height={280}>
-            <AreaChart data={daily} margin={{ top: 10, right: 8, left: -16, bottom: 0 }}>
+            <AreaChart data={daily} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="focusArea" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#f43f5e" stopOpacity={0.5} />
@@ -133,10 +146,11 @@ export default function Statistics() {
 
       {/* Sessions per day + recent */}
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="glass animate-rise rounded-3xl p-6 lg:col-span-2">
+        <div className="glass animate-rise flex flex-col rounded-3xl p-6 lg:col-span-2">
           <h2 className="mb-4 font-display text-lg font-bold text-gray-900 dark:text-white">Sessions per day</h2>
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={daily} margin={{ top: 10, right: 8, left: -16, bottom: 0 }} barGap={4}>
+          <div className="min-h-[260px] flex-1">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={daily} margin={{ top: 10, right: 8, left: 0, bottom: 0 }} barGap={4}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={darkMode ? '#ffffff14' : '#0000000d'} />
               <XAxis dataKey="label" stroke={axisColor} tickLine={false} axisLine={false} fontSize={12} />
               <YAxis stroke={axisColor} tickLine={false} axisLine={false} fontSize={12} width={36} allowDecimals={false} />
@@ -145,6 +159,7 @@ export default function Statistics() {
               <Bar dataKey="break" name="break" fill="#14b8a6" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
+          </div>
         </div>
 
         <div className="glass animate-rise rounded-3xl p-6">
@@ -156,13 +171,13 @@ export default function Statistics() {
                   <span className="h-2.5 w-2.5 rounded-full" style={{ background: COLORS[s.type] }} />
                   <div>
                     <div className="text-sm font-semibold text-gray-800 dark:text-gray-100">{labelFor(s.type)}</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                    <div className="text-xs text-gray-600 dark:text-gray-400">
                       {new Date(s.startTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} ·{' '}
                       {new Date(s.startTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
                     </div>
                   </div>
                 </div>
-                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{s.duration / 60}m</span>
+                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{s.duration / 60}m</span>
               </div>
             ))}
           </div>
